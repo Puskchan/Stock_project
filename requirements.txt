@@ -1,0 +1,15 @@
+numpy
+pandas
+requests
+newsapi-python
+python-dotenv
+yfinance
+# scikit-learn
+# nltk
+# transformers
+# kafka-python
+pymongo
+# mysql-connector-python
+# redis-py
+# streamlit
+-e .
