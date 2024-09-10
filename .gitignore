@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+rough.py
 logs/
 build/
 develop-eggs/

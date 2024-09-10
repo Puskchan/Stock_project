@@ -25,34 +25,33 @@ collection2 = db['stocks']
 logging.info("Database brought to local variable")
 
 # Setup news api client
-
 newsapi = NewsApiClient(api_key=NEWS_API_KEY)
 logging.info("News API connected")
 
 
 # Get the Stocks
 
-def fetch_stocks(symbols):
-    stock_data = {}
+def fetch_stocks(symbol, period='1y'):
+    stock_data = [symbol]
     try:
         logging.info("Fetching stocks started.....")
-        for symbol in symbols:
-            ticker = yf.Ticker(symbol)
-            hist = ticker.history(period='2d')
+        
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=period)
 
-            # Convert the DataFrame to a list of dictionaries
-            data_list = []
-            for index, row in hist.iterrows():
-                data_list.append({
-                    'date': index.to_pydatetime(),
-                    'open': row['Open'],
-                    'high': row['High'],
-                    'low': row['Low'],
-                    'close': row['Close'],
-                    'volume': row['Volume']
-                })
+        # Convert the DataFrame to a list of dictionaries
+        data_list = []
+        for index, row in hist.iterrows():
+            data_list.append({
+                'date': index.to_pydatetime(),
+                'open': row['Open'],
+                'high': row['High'],
+                'low': row['Low'],
+                'close': row['Close'],
+                'volume': row['Volume']
+            })
             
-            stock_data[symbol] = data_list
+        stock_data.append(data_list)
         logging.info("Fetching stock completed!")
 
         return stock_data
@@ -66,24 +65,24 @@ def fetch_stocks(symbols):
 def store_stocks(stock_data):
     try:
         logging.info("Storing stocks initiated.....")
-        for symbol, data_list in stock_data.items():
-            for data_point in data_list:
-                stock_doc = {
-                    'symbol': symbol,
-                    'date': data_point['date'],
-                    'open': data_point['open'],
-                    'high': data_point['high'],
-                    'low': data_point['low'],
-                    'close': data_point['close'],
-                    'volume': data_point['volume']
-                }
-                
-                # Insert the stock data, or update if it already exists
-                result = collection2.update_one(
-                    {'symbol': symbol, 'date': data_point['date']},  # Filter
-                    {'$set': stock_doc},  # Update
-                    upsert=True  # Insert if not exists
-                )
+        symbol, data_list = stock_data[0], stock_data[1]
+        for data_point in data_list:
+            stock_doc = {
+                'symbol': symbol,
+                'date': data_point['date'],
+                'open': data_point['open'],
+                'high': data_point['high'],
+                'low': data_point['low'],
+                'close': data_point['close'],
+                'volume': data_point['volume']
+            }
+            
+            # Insert the stock data, or update if it already exists
+            result = collection2.update_one(
+                {'symbol': symbol, 'date': data_point['date']},  # Filter
+                {'$set': stock_doc},  # Update
+                upsert=True  # Insert if not exists
+            )
         logging.info("Stock storing completed!")
 
     
@@ -92,15 +91,15 @@ def store_stocks(stock_data):
         raise CustomException(e,sys)
 
 
-def fetch_articles(stock_name):
+def fetch_articles(stock_name, from_date, to_date, no_of_articles):
     try:
         logging.info("Fetching articles started.....")
         article = newsapi.get_everything(q=f'{stock_name}',
-                                         from_param='2024-09-02',
-                                         to='2024-09-02',
+                                         from_param=from_date,
+                                         to=to_date,
                                          language='en',
                                          sort_by='relevancy',
-                                         page_size=1,
+                                         page_size=no_of_articles,
                                          page=1)
         
         # Check the returned articles
@@ -108,7 +107,7 @@ def fetch_articles(stock_name):
             logging.info("Fetching articles completed!")
             return article['articles']
         else:
-            logging.info(f"No articles found. Status: {article['status']}")
+            logging.info(f"No articles found for {stock_name}. Status: {article['status']}")
             return None
         
     except Exception as e:
@@ -144,17 +143,35 @@ def store_articles(articles):
 
 if __name__ == "__main__":
 
+    stocks_dict = {
+        "Asian Paints": "ASIANPAINT", "Britannia Industries": "BRITANNIA", "Cipla": "CIPLA", "Eicher Motors": "EICHERMOT",
+        "Nestle India": "NESTLEIND", "Grasim Industries": "GRASIM", "Hero MotoCorp": "HEROMOTOCO", "Hindalco Industries": "HINDALCO",
+        "Hindustan Unilever": "HINDUNILVR", "ITC": "ITC", "Larsen & Toubro": "LT", "Mahindra & Mahindra": "M&M",
+        "Reliance Industries": "RELIANCE", "Tata Consumer Products": "TATACONSUMER", "Tata Motors": "TATAMOTORS",
+        "Tata Steel": "TATASTEEL", "Wipro": "WIPRO", "Apollo Hospitals Enterprise": "APOLLOHOSP", "Dr Reddys Laboratories": "DRREDDY",
+        "Titan Company": "TITAN", "State Bank of India": "SBIN", "Shriram Finance": "SHRIRAMFIN", "Bharat Petroleum Corporation": "BPCL",
+        "Kotak Mahindra Bank": "KOTAKBANK", "Infosys": "INFY", "Bajaj Finance": "BAJFINANCE", "Adani Enterprises": "ADANIENT",
+        "Sun Pharmaceuticals Industries": "SUNPHARMA", "JSW Steel": "JSWSTEEL", "HDFC Bank": "HDFCBANK", "Tata Consultancy Services": "TCS",
+        "ICICI Bank": "ICICIBANK", "Power Grid Corporation of India": "POWERGRID", "Maruti Suzuki India": "MARUTI", "IndusInd Bank": "INDUSINDBK",
+        "Axis Bank": "AXISBANK", "HCL Technologies": "HCLTECH", "Oil & Natural Gas Corporation": "ONGC", "NTPC": "NTPC",
+        "Coal India": "COALINDIA", "Bharti Airtel": "BHARTIARTL", "Tech Mahindra": "TECHM", "LTIMindtree": "LTI",
+        "Divis Laboratories": "DIVISLAB", "Adani Ports & Special Economic Zone": "ADANIPORTS", "HDFC Life Insurance Company": "HDFCLIFE",
+        "SBI Life Insurance Company": "SBILIFE", "UltraTech Cement": "ULTRACEMCO", "Bajaj Auto": "BAJAJ-AUTO", "Bajaj Finserv": "BAJFINANCE"
+    }
+
     # Making the dataset
-    
-    articles = fetch_articles("India")
-    if articles:
-        store_articles(articles)
-    else:
-        print('No articles fetched')
+
+    for company_name, company_stock in stocks_dict.items():
+        
+        articles = fetch_articles(company_name, from_date='2024-08-11', to_date='2024-08-11', no_of_articles=10)
+        if articles:
+            store_articles(articles)
+        else:
+            logging.info("No articles fetched")
 
 
-    stocks = fetch_stocks(['MSFT'])
-    if stocks:
-        store_stocks(stocks)
-    else:
-        print("No stocks fetched")
+        stocks = fetch_stocks(company_stock, period='5y')
+        if stocks:
+            store_stocks(stocks)
+        else:
+            logging.info("No stocks fetched")
