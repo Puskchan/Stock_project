@@ -143,31 +143,36 @@ def store_articles(articles):
 
 if __name__ == "__main__":
 
-    stocks_dict = {
-        "Asian Paints": "ASIANPAINT", "Britannia Industries": "BRITANNIA", "Cipla": "CIPLA", "Eicher Motors": "EICHERMOT",
-        "Nestle India": "NESTLEIND", "Grasim Industries": "GRASIM", "Hero MotoCorp": "HEROMOTOCO", "Hindalco Industries": "HINDALCO",
-        "Hindustan Unilever": "HINDUNILVR", "ITC": "ITC", "Larsen & Toubro": "LT", "Mahindra & Mahindra": "M&M",
-        "Reliance Industries": "RELIANCE", "Tata Consumer Products": "TATACONSUMER", "Tata Motors": "TATAMOTORS",
-        "Tata Steel": "TATASTEEL", "Wipro": "WIPRO", "Apollo Hospitals Enterprise": "APOLLOHOSP", "Dr Reddys Laboratories": "DRREDDY",
-        "Titan Company": "TITAN", "State Bank of India": "SBIN", "Shriram Finance": "SHRIRAMFIN", "Bharat Petroleum Corporation": "BPCL",
-        "Kotak Mahindra Bank": "KOTAKBANK", "Infosys": "INFY", "Bajaj Finance": "BAJFINANCE", "Adani Enterprises": "ADANIENT",
-        "Sun Pharmaceuticals Industries": "SUNPHARMA", "JSW Steel": "JSWSTEEL", "HDFC Bank": "HDFCBANK", "Tata Consultancy Services": "TCS",
-        "ICICI Bank": "ICICIBANK", "Power Grid Corporation of India": "POWERGRID", "Maruti Suzuki India": "MARUTI", "IndusInd Bank": "INDUSINDBK",
-        "Axis Bank": "AXISBANK", "HCL Technologies": "HCLTECH", "Oil & Natural Gas Corporation": "ONGC", "NTPC": "NTPC",
-        "Coal India": "COALINDIA", "Bharti Airtel": "BHARTIARTL", "Tech Mahindra": "TECHM", "LTIMindtree": "LTI",
-        "Divis Laboratories": "DIVISLAB", "Adani Ports & Special Economic Zone": "ADANIPORTS", "HDFC Life Insurance Company": "HDFCLIFE",
-        "SBI Life Insurance Company": "SBILIFE", "UltraTech Cement": "ULTRACEMCO", "Bajaj Auto": "BAJAJ-AUTO", "Bajaj Finserv": "BAJFINANCE"
-    }
+    stocks_dict = {'Asian Paints': 'ASIANPAINT.NS', 'Britannia': 'BRITANNIA.NS', 'Cipla': 'CIPLA.NS', 
+               'Eicher Motors': 'EICHERMOT.NS', 'Nestle India': 'NESTLEIND.NS', 'Grasim': 'GRASIM.NS', 
+               'Hero MotoCorp': 'HEROMOTOCO.NS', 'Hindalco': 'HINDALCO.NS', 'Hindustan Unilever': 'HINDUNILVR.NS', 
+               'ITC': 'ITC.NS', 'Larsen & Toubro': 'LT.NS', 'Mahindra & Mahindra': 'M&M.NS', 
+               'Reliance': 'RELIANCE.NS', 'Tata Consumer Products': 'TATACONSUM.NS', 
+               'Tata Motors': 'TATAMOTORS.NS', 'Tata Steel': 'TATASTEEL.NS', 'Wipro': 'WIPRO.NS', 
+               'Apollo Hospitals Enterprise': 'APOLLOHOSP.NS', 'Dr Reddys Laboratories': 'DRREDDY.NS', 
+               'Titan Company': 'TITAN.NS', 'State Bank of India': 'SBIN.NS', 'Shriram Finance': 'SHRIRAMFIN.NS', 
+               'Bharat Petroleum Corporation': 'BPCL.NS', 'Kotak Mahindra Bank': 'KOTAKBANK.NS', 'Infosys': 'INFY.NS', 
+               'Bajaj Finance': 'BAJFINANCE.NS', 'Adani Enterprises': 'ADANIENT.NS', 
+               'Sun Pharmaceuticals': 'SUNPHARMA.NS', 'JSW Steel': 'JSWSTEEL.NS', 'HDFC Bank': 'HDFCBANK.NS', 
+               'Tata Consultancy Services': 'TCS.NS', 'ICICI Bank': 'ICICIBANK.NS', 
+               'Power Grid Corporation of India': 'POWERGRID.NS', 'Maruti Suzuki India': 'MARUTI.NS', 
+               'IndusInd Bank': 'INDUSINDBK.NS', 'Axis Bank': 'AXISBANK.NS', 'HCL Technologies': 'HCLTECH.NS', 
+               'Oil & Natural Gas Corporation': 'ONGC.NS', 'NTPC': 'NTPC.NS', 'Coal India': 'COALINDIA.NS', 
+               'Bharti Airtel': 'BHARTIARTL.NS', 'Tech Mahindra': 'TECHM.NS', 'LTIMindtree': 'LTIM.NS', 
+               'Divis Laboratories': 'DIVISLAB.NS', 'Adani Ports & Special Economic Zone': 'ADANIPORTS.NS', 
+               'HDFC Life Insurance Company': 'HDFCLIFE.NS', 'SBI Life Insurance Company': 'SBILIFE.NS', 
+               'UltraTech Cement': 'ULTRACEMCO.NS', 'Bajaj Auto': 'BAJAJ-AUTO.NS', 'Bajaj Finserv': 'BAJFINANCE.NS'
+               }
 
     # Making the dataset
 
     for company_name, company_stock in stocks_dict.items():
         
-        articles = fetch_articles(company_name, from_date='2024-08-11', to_date='2024-08-11', no_of_articles=10)
-        if articles:
-            store_articles(articles)
-        else:
-            logging.info("No articles fetched")
+        # articles = fetch_articles(company_name, from_date='2024-08-11', to_date='2024-08-11', no_of_articles=10)
+        # if articles:
+        #     store_articles(articles)
+        # else:
+        #     logging.info("No articles fetched")
 
 
         stocks = fetch_stocks(company_stock, period='5y')
