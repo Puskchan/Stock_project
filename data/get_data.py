@@ -1,39 +1,25 @@
 import os
 import sys
-import subprocess
 from dotenv import load_dotenv
 from src.logger import logging
 from src.exception import CustomException
+from src.settings import stocks_dict
+from src.utils import mongo_db_connect, mongo_service
 
 import yfinance as yf
-from pymongo import MongoClient
 from newsapi import NewsApiClient
 
-
-# Load env variables
-load_dotenv()
-
+# Start mongodb
+mongo_service('start')
 
 # Getting the API key
-SUDO=os.getenv('SUDO')
 NEWS_API_KEY=os.getenv('NEWS_API_KEY')
-MONGODB_CONNECTION_STRING=os.getenv('MONGODB_CONNECTION_STRING')
 
-
-# Start the mongodb service
-command = f"echo {SUDO}| sudo -S systemctl start mongod"
-result = subprocess.run(command, shell=True, capture_output=True, text=True)
-
-logging.info(f"Mongo DB starting - {result.stderr}")
-
-
-# Set up mongodb connection
-client = MongoClient(MONGODB_CONNECTION_STRING)
-logging.info("Mongodb connection established")
-db = client['storage']
+# Connect to database
+db = mongo_db_connect('storage')
 collection1 = db['articles']
 collection2 = db['stocks']
-logging.info("Database brought to local variable")
+
 
 # Setup news api client
 newsapi = NewsApiClient(api_key=NEWS_API_KEY)
@@ -154,27 +140,6 @@ def store_articles(articles):
 
 if __name__ == "__main__":
 
-    stocks_dict = {'Asian Paints': 'ASIANPAINT.NS', 'Britannia': 'BRITANNIA.NS', 'Cipla': 'CIPLA.NS', 
-               'Eicher Motors': 'EICHERMOT.NS', 'Nestle India': 'NESTLEIND.NS', 'Grasim': 'GRASIM.NS', 
-               'Hero MotoCorp': 'HEROMOTOCO.NS', 'Hindalco': 'HINDALCO.NS', 'Hindustan Unilever': 'HINDUNILVR.NS', 
-               'ITC': 'ITC.NS', 'Larsen & Toubro': 'LT.NS', 'Mahindra & Mahindra': 'M&M.NS', 
-               'Reliance': 'RELIANCE.NS', 'Tata Consumer Products': 'TATACONSUM.NS', 
-               'Tata Motors': 'TATAMOTORS.NS', 'Tata Steel': 'TATASTEEL.NS', 'Wipro': 'WIPRO.NS', 
-               'Apollo Hospitals Enterprise': 'APOLLOHOSP.NS', 'Dr Reddys Laboratories': 'DRREDDY.NS', 
-               'Titan Company': 'TITAN.NS', 'State Bank of India': 'SBIN.NS', 'Shriram Finance': 'SHRIRAMFIN.NS', 
-               'Bharat Petroleum Corporation': 'BPCL.NS', 'Kotak Mahindra Bank': 'KOTAKBANK.NS', 'Infosys': 'INFY.NS', 
-               'Bajaj Finance': 'BAJFINANCE.NS', 'Adani Enterprises': 'ADANIENT.NS', 
-               'Sun Pharmaceuticals': 'SUNPHARMA.NS', 'JSW Steel': 'JSWSTEEL.NS', 'HDFC Bank': 'HDFCBANK.NS', 
-               'Tata Consultancy Services': 'TCS.NS', 'ICICI Bank': 'ICICIBANK.NS', 
-               'Power Grid Corporation of India': 'POWERGRID.NS', 'Maruti Suzuki India': 'MARUTI.NS', 
-               'IndusInd Bank': 'INDUSINDBK.NS', 'Axis Bank': 'AXISBANK.NS', 'HCL Technologies': 'HCLTECH.NS', 
-               'Oil & Natural Gas Corporation': 'ONGC.NS', 'NTPC': 'NTPC.NS', 'Coal India': 'COALINDIA.NS', 
-               'Bharti Airtel': 'BHARTIARTL.NS', 'Tech Mahindra': 'TECHM.NS', 'LTIMindtree': 'LTIM.NS', 
-               'Divis Laboratories': 'DIVISLAB.NS', 'Adani Ports & Special Economic Zone': 'ADANIPORTS.NS', 
-               'HDFC Life Insurance Company': 'HDFCLIFE.NS', 'SBI Life Insurance Company': 'SBILIFE.NS', 
-               'UltraTech Cement': 'ULTRACEMCO.NS', 'Bajaj Auto': 'BAJAJ-AUTO.NS', 'Bajaj Finserv': 'BAJFINANCE.NS'
-               }
-
     # Downloading the raw data to database
 
     for company_name, company_stock in stocks_dict.items():
@@ -193,7 +158,4 @@ if __name__ == "__main__":
             logging.info("No stocks fetched")
 
     
-    command = f"echo {SUDO}| sudo -S systemctl stop mongod"
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-
-    logging.info(f"Mongo DB stopping - {result.stderr}")
+    mongo_service('stop')
