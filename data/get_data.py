@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 from dotenv import load_dotenv
 from src.logger import logging
 from src.exception import CustomException
@@ -12,9 +13,19 @@ from newsapi import NewsApiClient
 # Load env variables
 load_dotenv()
 
+
 # Getting the API key
+SUDO=os.getenv('SUDO')
 NEWS_API_KEY=os.getenv('NEWS_API_KEY')
 MONGODB_CONNECTION_STRING=os.getenv('MONGODB_CONNECTION_STRING')
+
+
+# Start the mongodb service
+command = f"echo {SUDO}| sudo -S systemctl start mongod"
+result = subprocess.run(command, shell=True, capture_output=True, text=True)
+
+logging.info(f"Mongo DB starting - {result.stderr}")
+
 
 # Set up mongodb connection
 client = MongoClient(MONGODB_CONNECTION_STRING)
@@ -164,7 +175,7 @@ if __name__ == "__main__":
                'UltraTech Cement': 'ULTRACEMCO.NS', 'Bajaj Auto': 'BAJAJ-AUTO.NS', 'Bajaj Finserv': 'BAJFINANCE.NS'
                }
 
-    # Making the dataset
+    # Downloading the raw data to database
 
     for company_name, company_stock in stocks_dict.items():
         
@@ -180,3 +191,9 @@ if __name__ == "__main__":
             store_stocks(stocks)
         else:
             logging.info("No stocks fetched")
+
+    
+    command = f"echo {SUDO}| sudo -S systemctl stop mongod"
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+
+    logging.info(f"Mongo DB stopping - {result.stderr}")
