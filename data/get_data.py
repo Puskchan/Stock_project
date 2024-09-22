@@ -9,26 +9,33 @@ from src.utils import mongo_db_connect, mongo_service
 import yfinance as yf
 from newsapi import NewsApiClient
 
-# Start mongodb
+# Start MongoDB service
 mongo_service('start')
 
-# Getting the API key
-NEWS_API_KEY=os.getenv('NEWS_API_KEY')
+# Load the News API key from environment variables
+NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 
-# Connect to database
+# Connect to the MongoDB database and define collections for articles and stocks
 db = mongo_db_connect('storage')
 collection1 = db['articles']
 collection2 = db['stocks']
 
-
-# Setup news api client
+# Initialize the News API client
 newsapi = NewsApiClient(api_key=NEWS_API_KEY)
 logging.info("News API connected")
 
+# Function to fetch historical stock data
+def fetch_stocks(symbol: str, period: str = '1y') -> list:
+    """
+    Fetch historical stock data for a given symbol over a specified period.
 
-# Get the Stocks
+    Args:
+        symbol (str): The stock symbol to fetch data for.
+        period (str): The period for which to fetch historical data (default is '1y').
 
-def fetch_stocks(symbol, period='1y'):
+    Returns:
+        list: A list containing the stock symbol and its historical data.
+    """
     stock_data = [symbol]
     try:
         logging.info("Fetching stocks started.....")
@@ -36,7 +43,7 @@ def fetch_stocks(symbol, period='1y'):
         ticker = yf.Ticker(symbol)
         hist = ticker.history(period=period)
 
-        # Convert the DataFrame to a list of dictionaries
+        # Convert the DataFrame to a list of dictionaries for easier processing
         data_list = []
         for index, row in hist.iterrows():
             data_list.append({
@@ -54,12 +61,16 @@ def fetch_stocks(symbol, period='1y'):
         return stock_data
     except Exception as e:
         print("An error occurred while fetching stock prices: ")
-        raise CustomException(e,sys)
+        raise CustomException(e, sys)
 
+# Function to store stock data in the database
+def store_stocks(stock_data: list) -> None:
+    """
+    Store stock data in the database.
 
-# Store the stocks
-
-def store_stocks(stock_data):
+    Args:
+        stock_data (list): A list containing the stock symbol and its historical data.
+    """
     try:
         logging.info("Storing stocks initiated.....")
         symbol, data_list = stock_data[0], stock_data[1]
@@ -74,21 +85,32 @@ def store_stocks(stock_data):
                 'volume': data_point['volume']
             }
             
-            # Insert the stock data, or update if it already exists
+            # Insert or update the stock data in the database
             result = collection2.update_one(
-                {'symbol': symbol, 'date': data_point['date']},  # Filter
-                {'$set': stock_doc},  # Update
-                upsert=True  # Insert if not exists
+                {'symbol': symbol, 'date': data_point['date']},  # Filter for existing records
+                {'$set': stock_doc},  # Update the record
+                upsert=True  # Insert if the record does not exist
             )
         logging.info("Stock storing completed!")
 
-    
     except Exception as e:
         print("An error occurred while storing stock data:")
-        raise CustomException(e,sys)
+        raise CustomException(e, sys)
 
+# Function to fetch articles related to a specific stock
+def fetch_articles(stock_name: str, from_date: str, to_date: str, no_of_articles: int) -> list:
+    """
+    Fetch articles related to a specific stock within a date range.
 
-def fetch_articles(stock_name, from_date, to_date, no_of_articles):
+    Args:
+        stock_name (str): The name of the stock to fetch articles for.
+        from_date (str): The start date for fetching articles.
+        to_date (str): The end date for fetching articles.
+        no_of_articles (int): The number of articles to fetch.
+
+    Returns:
+        list: A list of articles related to the stock.
+    """
     try:
         logging.info("Fetching articles started.....")
         article = newsapi.get_everything(q=f'{stock_name}',
@@ -99,7 +121,7 @@ def fetch_articles(stock_name, from_date, to_date, no_of_articles):
                                          page_size=no_of_articles,
                                          page=1)
         
-        # Check the returned articles
+        # Check if articles were successfully fetched
         if article['status'] == 'ok' and article['totalResults'] > 0:
             logging.info("Fetching articles completed!")
             return article['articles']
@@ -108,10 +130,17 @@ def fetch_articles(stock_name, from_date, to_date, no_of_articles):
             return None
         
     except Exception as e:
-        print(f"An error occured while fetching articles:")
-        raise CustomException(e,sys)
+        print(f"An error occurred while fetching articles:")
+        raise CustomException(e, sys)
 
-def store_articles(articles):
+# Function to store articles in the database
+def store_articles(articles: list) -> None:
+    """
+    Store articles in the database.
+
+    Args:
+        articles (list): A list of articles to store.
+    """
     try:
         logging.info("Storing articles initiated.....")
         for article in articles:
@@ -126,36 +155,37 @@ def store_articles(articles):
                 'source': article.get('source'),
             }
 
+            # Insert or update the article in the database
             result = collection1.update_one(
-                {'url': article_doc['url']},
-                {'$set': article_doc},
-                upsert=True
+                {'url': article_doc['url']},  # Filter for existing articles
+                {'$set': article_doc},  # Update the article
+                upsert=True  # Insert if the article does not exist
             )
         logging.info("Article storing completed!")
 
     except Exception as e:
-        print(f"An error occurred while storing articles:")
-        raise CustomException(e,sys)
+        print("An error occurred while storing articles:")
+        raise CustomException(e, sys)
 
-
+# Main execution block
 if __name__ == "__main__":
 
-    # Downloading the raw data to database
-
+    # Downloading the raw data to the database for each company
     for company_name, company_stock in stocks_dict.items():
         
+        # Uncomment to fetch and store articles
         # articles = fetch_articles(company_name, from_date='2024-08-11', to_date='2024-08-11', no_of_articles=10)
         # if articles:
         #     store_articles(articles)
         # else:
         #     logging.info("No articles fetched")
 
-
+        # Fetch and store stock data
         stocks = fetch_stocks(company_stock, period='5y')
         if stocks:
             store_stocks(stocks)
         else:
             logging.info("No stocks fetched")
 
-    
+    # Stop the MongoDB service
     mongo_service('stop')
