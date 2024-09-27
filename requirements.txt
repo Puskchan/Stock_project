@@ -4,6 +4,7 @@ requests
 newsapi-python
 python-dotenv
 yfinance
+matplotlib
 # scikit-learn
 # nltk
 # transformers

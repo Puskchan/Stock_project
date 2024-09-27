@@ -9,22 +9,20 @@ from src.settings import stocks_dict
 from src.utils import mongo_db_connect, mongo_service
 
 import yfinance as yf
-from newsapi import NewsApiClient
 
 # Start MongoDB service
 mongo_service('start')
 
 # Load the News API key from environment variables
-NEWS_API_KEY = os.getenv('NEWS_API_KEY')
+newsapi = os.getenv('NEWS_API_KEY')
+logging.info("News API key loaded")
+
 
 # Connect to the MongoDB database and define collections for articles and stocks
 db = mongo_db_connect('storage')
 collection1 = db['articles']
 collection2 = db['stocks']
 
-# Initialize the News API client
-newsapi = NewsApiClient(api_key=NEWS_API_KEY)
-logging.info("News API connected")
 
 # Function to fetch historical stock data
 def fetch_stocks(symbol: str, period: str = '1y') -> list:
@@ -108,7 +106,6 @@ def fetch_articles(stock_name: str, from_date: str, to_date: str) -> list:
         stock_name (str): The name of the stock to fetch articles for.
         from_date (str): The start date for fetching articles.
         to_date (str): The end date for fetching articles.
-        no_of_articles (int): The number of articles to fetch.
 
     Returns:
         list: A list of articles related to the stock.
@@ -118,7 +115,7 @@ def fetch_articles(stock_name: str, from_date: str, to_date: str) -> list:
         query = f"{stock_name}".replace(' ','+')
         start = f"{from_date}T00:00:00Z"
         end = f"{to_date}T00:00:00Z"
-        url = f"https://gnews.io/api/v4/search?q={query}&lang=en&max=10&from={start}&to={end}&apikey={apikey}"
+        url = f"https://gnews.io/api/v4/search?q={query}&lang=en&max=10&from={start}&to={end}&apikey={newsapi}"
         with urllib.request.urlopen(url) as response:
             article = json.loads(response.read().decode("utf-8"))
             # Check if articles were successfully fetched
@@ -171,18 +168,20 @@ if __name__ == "__main__":
     for company_name, company_stock in stocks_dict.items():
         
         # Uncomment to fetch and store articles
-        # articles = fetch_articles(company_name, from_date='2024-08-11', to_date='2024-08-11')
-        # if articles:
-        #     store_articles(articles)
-        # else:
-        #     logging.info("No articles fetched")
+        articles = fetch_articles(company_name, from_date='2024-08-11', to_date='2024-09-11')
+        if articles:
+            store_articles(articles)
+        else:
+            logging.info("No articles fetched")
+        
+        break
 
         # Fetch and store stock data
-        stocks = fetch_stocks(company_stock, period='5y')
-        if stocks:
-            store_stocks(stocks)
-        else:
-            logging.info("No stocks fetched")
+        # stocks = fetch_stocks(company_stock, period='5y')
+        # if stocks:
+        #     store_stocks(stocks)
+        # else:
+        #     logging.info("No stocks fetched")
 
     # Stop the MongoDB service
     mongo_service('stop')
