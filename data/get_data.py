@@ -2,6 +2,8 @@ import os
 import sys
 import json
 import urllib.request
+from newscatcherapi import NewsCatcherApiClient
+
 from dotenv import load_dotenv
 from src.logger import logging
 from src.exception import CustomException
@@ -14,14 +16,17 @@ import yfinance as yf
 mongo_service('start')
 
 # Load the News API key from environment variables
-newsapi = os.getenv('NEWS_API_KEY')
-logging.info("News API key loaded")
+NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 
 
 # Connect to the MongoDB database and define collections for articles and stocks
 db = mongo_db_connect('storage')
 collection1 = db['articles']
 collection2 = db['stocks']
+
+# Connect to the newscatcher api
+newsapi = NewsCatcherApiClient(NEWS_API_KEY)
+logging.info("News API connected")
 
 
 # Function to fetch historical stock data
@@ -112,19 +117,14 @@ def fetch_articles(stock_name: str, from_date: str, to_date: str) -> list:
     """
     try:
         logging.info("Fetching articles started.....")
-        query = f"{stock_name}".replace(' ','+')
-        start = f"{from_date}T00:00:00Z"
-        end = f"{to_date}T00:00:00Z"
-        url = f"https://gnews.io/api/v4/search?q={query}&lang=en&max=10&from={start}&to={end}&apikey={newsapi}"
-        with urllib.request.urlopen(url) as response:
-            article = json.loads(response.read().decode("utf-8"))
-            # Check if articles were successfully fetched
-            if len(article['articles']) > 0:
-                logging.info("Fetching articles completed!")
-                return article['articles']
-            else:
-                logging.info(f"No articles found for {stock_name}. Status: Failed")
-                return None
+        article = newsapi.get_search(q=stock_name, from_=from_date, to_=to_date)
+        # Check if articles were successfully fetched
+        if len(article['articles']) > 0 and article['status'] == 'ok':
+            logging.info("Fetching articles completed!")
+            return article['articles']
+        else:
+            logging.info(f"No articles found for {stock_name}. Status: {article['status']}")
+            return None
         
     except Exception as e:
         print(f"An error occurred while fetching articles:")
@@ -143,10 +143,10 @@ def store_articles(articles: list) -> None:
         for article in articles:
             article_doc = {
                 'title': article.get('title'),
-                'description': article.get('description'),
-                'url': article.get('url'),
-                'publishedAt': article.get('publishedAt'),
-                'source-name': article.get('source.name'),
+                'summary': article.get('summary'),
+                'published_date': article.get('published_date'),
+                'clean_url': article.get('clean_url'),
+                'country': article.get('country')
             }
 
             # Insert or update the article in the database
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     for company_name, company_stock in stocks_dict.items():
         
         # Uncomment to fetch and store articles
-        articles = fetch_articles(company_name, from_date='2024-08-11', to_date='2024-09-11')
+        articles = fetch_articles(stock_name=company_name, from_date='2024-08-11', to_date='2024-09-11')
         if articles:
             store_articles(articles)
         else:
