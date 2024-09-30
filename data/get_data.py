@@ -117,8 +117,9 @@ def fetch_articles(stock_name: str, from_date: str, to_date: str) -> list:
     """
     try:
         logging.info("Fetching articles started.....")
-        article = newsapi.get_search(q=stock_name, from_=from_date, to_=to_date)
-        # Check if articles were successfully fetched
+        # This one is a shortcut, run this script before sleeping it might take an hour or so to run - REMEMBER TO REMOVE LOCK SCREEN TIMER
+        # article = newsapi.get_search_all_articles(q=stock_name,search_in='title',from_=from_date, to_=to_date,by='month')
+        article = newsapi.get_search_all_articles(q=stock_name,from_=from_date, to_=to_date,by='month')
         if len(article['articles']) > 0 and article['status'] == 'ok':
             logging.info("Fetching articles completed!")
             return article['articles']
@@ -143,7 +144,7 @@ def store_articles(articles: list) -> None:
         for article in articles:
             article_doc = {
                 'title': article.get('title'),
-                'summary': article.get('summary'),
+                'excerpt': article.get('excerpt'),
                 'published_date': article.get('published_date'),
                 'clean_url': article.get('clean_url'),
                 'country': article.get('country')
@@ -151,7 +152,7 @@ def store_articles(articles: list) -> None:
 
             # Insert or update the article in the database
             result = collection1.update_one(
-                {'url': article_doc['url']},  # Filter for existing articles
+                {'clean_url': article_doc['clean_url']},  # Filter for existing articles
                 {'$set': article_doc},  # Update the article
                 upsert=True  # Insert if the article does not exist
             )
@@ -167,21 +168,24 @@ if __name__ == "__main__":
     # Downloading the raw data to the database for each company
     for company_name, company_stock in stocks_dict.items():
         
-        # Uncomment to fetch and store articles
-        articles = fetch_articles(stock_name=company_name, from_date='2024-08-11', to_date='2024-09-11')
+        # Fetch and store articles
+        articles = fetch_articles(stock_name=company_name, from_date='2023-09-30', to_date='2024-09-30')
+
         if articles:
             store_articles(articles)
+
         else:
             logging.info("No articles fetched")
-        
-        break
 
-        # Fetch and store stock data
-        # stocks = fetch_stocks(company_stock, period='5y')
-        # if stocks:
-        #     store_stocks(stocks)
-        # else:
-        #     logging.info("No stocks fetched")
+        break
+        
+
+        # # Fetch and store stock data
+        stocks = fetch_stocks(company_stock, period='5y')
+        if stocks:
+            store_stocks(stocks)
+        else:
+            logging.info("No stocks fetched")
 
     # Stop the MongoDB service
     mongo_service('stop')
