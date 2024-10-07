@@ -117,9 +117,12 @@ def fetch_articles(stock_name: str, from_date: str, to_date: str) -> list:
     """
     try:
         logging.info("Fetching articles started.....")
+
         # This one is a shortcut, run this script before sleeping it might take an hour or so to run - REMEMBER TO REMOVE LOCK SCREEN TIMER
-        # article = newsapi.get_search_all_articles(q=stock_name,search_in='title',from_=from_date, to_=to_date,by='month')
-        article = newsapi.get_search_all_articles(q=stock_name,from_=from_date, to_=to_date,by='month')
+        article = newsapi.get_search_all_articles(q=stock_name,search_in='title',from_=from_date, to_=to_date,by='month')
+        
+        # This one brings in all the articles, run this script before sleeping it might take 5 -6 hour or so to run - REMEMBER TO REMOVE LOCK SCREEN TIMER
+        #article = newsapi.get_search_all_articles(q=stock_name,from_=from_date, to_=to_date,by='month')
         if len(article['articles']) > 0 and article['status'] == 'ok':
             logging.info("Fetching articles completed!")
             return article['articles']
@@ -151,7 +154,7 @@ def store_articles(articles: list) -> None:
             }
 
             # Insert or update the article in the database
-            result = collection1.update_one(
+            collection1.update_one(
                 {'clean_url': article_doc['clean_url']},  # Filter for existing articles
                 {'$set': article_doc},  # Update the article
                 upsert=True  # Insert if the article does not exist
@@ -169,15 +172,13 @@ if __name__ == "__main__":
     for company_name, company_stock in stocks_dict.items():
         
         # Fetch and store articles
-        articles = fetch_articles(stock_name=company_name, from_date='2023-09-30', to_date='2024-09-30')
+        articles = fetch_articles(stock_name=company_name, from_date='2023-10-07', to_date='2024-10-07')
 
         if articles:
             store_articles(articles)
 
         else:
             logging.info("No articles fetched")
-
-        break
         
 
         # # Fetch and store stock data
