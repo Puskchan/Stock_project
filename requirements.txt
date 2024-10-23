@@ -5,6 +5,7 @@ newscatcherapi
 python-dotenv
 yfinance
 matplotlib
+statsmodels
 # scikit-learn
 # nltk
 # transformers
