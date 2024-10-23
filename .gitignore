@@ -9,7 +9,6 @@ __pycache__/
 # Distribution / packaging
 *.csv
 articles.txt
-artifacts/
 .Python
 rough.py
 logs/
