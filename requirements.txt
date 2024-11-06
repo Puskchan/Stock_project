@@ -6,6 +6,7 @@ python-dotenv
 yfinance
 matplotlib
 statsmodels
+seaborn
 # scikit-learn
 # nltk
 # transformers
