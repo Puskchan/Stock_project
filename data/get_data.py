@@ -135,7 +135,7 @@ def fetch_articles(stock_name: str, from_date: str, to_date: str) -> list:
         raise CustomException(e, sys)
 
 # Function to store articles in the database
-def store_articles(articles: list) -> None:
+def store_articles(stock_name : str ,articles: list) -> None:
     """
     Store articles in the database.
 
@@ -146,6 +146,7 @@ def store_articles(articles: list) -> None:
         logging.info("Storing articles initiated.....")
         for article in articles:
             article_doc = {
+                'symbol' : stock_name,
                 'title': article.get('title'),
                 'excerpt': article.get('excerpt'),
                 'published_date': article.get('published_date'),
@@ -175,7 +176,7 @@ if __name__ == "__main__":
         articles = fetch_articles(stock_name=company_name, from_date='2023-10-07', to_date='2024-10-07')
 
         if articles:
-            store_articles(articles)
+            store_articles(company_stock, articles)
 
         else:
             logging.info("No articles fetched")

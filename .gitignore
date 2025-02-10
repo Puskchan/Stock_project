@@ -11,6 +11,7 @@ __pycache__/
 articles.txt
 .Python
 rough.py
+rough.ipynb
 logs/
 build/
 develop-eggs/

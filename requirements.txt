@@ -8,7 +8,7 @@ matplotlib
 statsmodels
 seaborn
 # scikit-learn
-# nltk
+nltk
 # transformers
 # kafka-python
 pymongo
